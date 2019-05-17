@@ -7,9 +7,9 @@
 \usepackage{booktabs}
 
 \hypersetup{%
-  pdftitle={Transformer Implementation for Multilingual Machine Translation},
-  pdfauthor={Gregor Geigle},
-  pdfsubject={Exposé for DeepML Project},
+  pdftitle={Multilingual Machine Translation with the Transformer Model},
+  pdfauthor={Gregor Geigle, Hadsy Cardenas and Timur Levent Görgü},
+  pdfsubject={Exposé for DeepML Class Project - Multilingual Transformer},
   pdfview=FitH,
   pdfstartview=FitV
 }
@@ -72,21 +72,35 @@ Large scale studies suggest that these multilingual systems might be able to out
 Recurrent Neural Networks (RNN) have been the go-to architecture for NMT as they work well for sequential data like sentences.
 They are usually combined with Attention mechanisms to better model the dependencies between the sentence parts.
 However, RNNs are hard to parallelize and struggle with long sequences \autocite{DBLP:journals/corr/WuSCLNMKCGMKSJL16}.\\
-In 2017, \textcite{DBLP:journals/corr/VaswaniSPUJGKP17} have presented the Transformer model which removes the recurrent units and uses only Attention.\\
+In 2017, \textcite{DBLP:journals/corr/VaswaniSPUJGKP17} have presented the Transformer model which removes the recurrent units and uses only Attention.
+This architecture allows for faster training because the encoding step is done in parallel for the entire input.\\
 They show that the Transformer can outperform previous RNN-based architectures and achieve state-of-the-art performance for bilingual machine translation \autocite{DBLP:journals/corr/VaswaniSPUJGKP17}.
 The study by \textcite{DBLP:journals/corr/abs-1806-06957} suggests that the Transformer performs better than RNNs in the multilingual setting, as well.
-Transformer also are successful in other language tasks like semantic analysis or question answering \autocite{DBLP:journals/corr/abs-1810-04805}.\\
+Transformer also are successful in other language tasks like semantic analysis or question answering \autocite{DBLP:journals/corr/abs-1810-04805}.
 The architecture of the Transformer for translation is an encoder-decoder model, similar to previous RNN-based architectures.
 The difference to the recurrent models is, that it replaces these units with multiple stacked blocks of each one Self-Attention and one fully connected layer in the encoder and an additional encoder-decoder Attention layer for each block in the decoder half of the network.\\
 Self-Attention is a new layer proposed by \textcite{DBLP:journals/corr/VaswaniSPUJGKP17} which calculates a feature vector for each input part based on its dependency to other parts.
 Since the entire input is processed at once, a positional encoding is added at the beginning to enable the network to model the sequential nature of the sentence.
+
 \section{Project Proposal}
-For the project, we plan to implement a Transformer model with TensorFlow and Keras based on the model proposed by \textcite{DBLP:journals/corr/VaswaniSPUJGKP17} and extend it for multilingual support as described by \textcite{DBLP:journals/corr/HaNW16,johnson2017google}.\\
-A possible dataset for our project is the TED corpus, which is a parallel corpus based on transcribed TED talks. 
-The dataset was compiled by \textcite{Ye2018WordEmbeddings} and contains a wide range of languages.
-\textcite{DBLP:journals/corr/abs-1903-00089} use this corpus for their experiments and publishes BLEU scores \autocite{papineni2002bleu} for some language pairs which enables us to compare our model against theirs.\\
-We are aware of our computational limitations and plan to begin experiments simply with German - English and then extend to three or five languages based on the performance and training time with fever languages.
-If our Transformer is able to handle multiple languages, then we can also experiment with zero-shot translations for a language similar to our trained ones.
+For the project, we plan to implement a Transformer model with TensorFlow and Keras based on the model proposed by \textcite{DBLP:journals/corr/VaswaniSPUJGKP17} and extend it for multilingual support as described by \textcite{DBLP:journals/corr/HaNW16,johnson2017google}.
+Our code will be publicly available on a GitHub repository\footnote{\url{https://github.com/Aaronsom/deepml-class-project/}}.\\
+A possible dataset for our project is the TED corpus, which is a parallel corpus based on 2400 transcribed TED talks available in 109 languages. 
+The dataset has been compiled, preprocessed and split in training, dev and test sets by \textcite{Ye2018WordEmbeddings} and is publicly available on their repository\footnote{\url{https://github.com/neulab/word-embeddings-for-nmt}}.
+\textcite{DBLP:journals/corr/abs-1903-00089} use this corpus for their study and publish BLEU scores \autocite{papineni2002bleu} for some language pairs which enables us to compare our model against theirs.\\
+We are aware of our computational limitations (at minimum one Nvidia GTX960M) compared to a study carried out at Google.
+Replication is thus out of scope for us.
+Instead, we are interested in how far we can push our model with our limited resources.
+We plan to begin experiments on a smaller scale with few languages and extend to more based on the achieved performance.
+\\
+In more detail, the milestones for our project are:\\
+\textbf{(i) English - German Transformer} We implement a working Transformer which we train for English and German until we can receive reasonable translations. 
+BLEU scores for English-German are available in other papers to compare our model against.\\
+\textbf{(ii) Extend to three to five languages} We extend our model to three to five languages for a more multilingual model. 
+Evaluation with BLEU can be a problem for this milestone because not all language pairs have published results. 
+We expect this to be the limit of our resources with regards to the number of languages.\\
+\textbf{(iiia) Zero Shot Experiments (Optional)} If enough time remains, we experiment with zero shot translations, that is, translations from languages not seen during training. Suitable for this are Germanic or Romance languages similar to our training languages.\\
+\textbf{(iiib) Highly Multilingual Model (Optional)} If our hardware and the training time allows for this, then we experiment with highly multilingual models containing up to all 109 languages of the dataset.
 
 \printbibliography[title=References, heading=bibliography]
    

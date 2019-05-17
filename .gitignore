@@ -26,7 +26,8 @@
 *.mtc1
 *.out
 *.synctex.gz
-
+*.bcf
+*.run.xml
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
