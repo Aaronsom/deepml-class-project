@@ -36,5 +36,5 @@ class DataGenerator(Sequence):
 
     def pad(self, batch, extra_padding=0):
         max_len = max([len(b) for b in batch])
-        batch = np.array([b + [self.mask_id]*(max_len+extra_padding-len(b)) for b in batch])
+        batch = np.array([np.append(b, [self.mask_id]*(max_len+extra_padding-len(b))) for b in batch])
         return batch

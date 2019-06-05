@@ -75,6 +75,10 @@ def get_encoding_info(languages, data_folder=DATA_FOLDER):
     encoding = bpe.Encoder.load(os.path.join(data_folder, "_".join(languages)+"_bpe.json"))
     return encoding.vocab_size, list(encoding.transform([encoding.PAD]))[0][0]
 
+def get_encoder(languages, data_folder=DATA_FOLDER):
+    encoding = bpe.Encoder.load(os.path.join(data_folder, "_".join(languages)+"_bpe.json"))
+    encoding.word_tokenizer = word_tokenizer
+    return encoding
 
 if __name__ == "__main__":
     #ted_preprocessing(["en", "de"])
