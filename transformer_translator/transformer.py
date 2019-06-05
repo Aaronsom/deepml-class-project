@@ -121,7 +121,7 @@ def positional_encoding(n, embedding_dim):
     return position_enc
 
 def encoder_block(inputs, heads, embedding_dim):
-    attention = Attention(64, heads=heads, mask=False, self_attention=True)(inputs)
+    attention = Attention(64, embedding_dim, heads=heads, mask=False, self_attention=True)(inputs)
     attention = Dropout(0.1)(attention)
     attention = Add()([attention, inputs])
     out = TimeDistributed(BatchNormalization())(attention)
@@ -150,29 +150,34 @@ def decoder_block(encoder_inputs, inputs, heads, embedding_dim):
     return out
 
 def transformer(max_len, vocab_len, mask_id=None, embedding=None, single_out=True,
-                blocks=6, heads=8,  embedding_dim=300, input_sequence_length=None):
-    inputs = Input(shape=(input_sequence_length, ))
-    #TODO two inputs
+                blocks=6, heads=8,  embedding_dim=300):
+    input_source = Input(shape=(None,))
+    input_target = Input(shape=(None,))
     if mask_id is not None:
-        masked_in = Masking(mask_value=mask_id)(inputs)
+        masked_in_source = Masking(mask_value=mask_id)(input_source)
+        masked_in_target = Masking(mask_value=mask_id)(input_target)
     else:
-        masked_in = inputs
+        masked_in_source = input_source
+        masked_in_target = input_target
     if embedding is None:
-        embedding = Embedding(input_dim=vocab_len, output_dim=embedding_dim)(masked_in)
+        embedding_source = Embedding(input_dim=vocab_len, output_dim=embedding_dim)(masked_in_source)
+        embedding_target = Embedding(input_dim=vocab_len, output_dim=embedding_dim)(masked_in_target)
     else:
-        embedding = Embedding(input_dim=vocab_len, output_dim=embedding_dim, weights=[embedding])(masked_in)
-    embedding = PositionalEncoding(max_len, embedding_dim)(embedding)
-    encoder = Dropout(0.1)(embedding)
+        embedding_source = Embedding(input_dim=vocab_len, output_dim=embedding_dim, weights=[embedding])(masked_in_source)
+        embedding_target = Embedding(input_dim=vocab_len, output_dim=embedding_dim, weights=[embedding])(masked_in_target)
+    embedding_source = PositionalEncoding(max_len, embedding_dim)(embedding_source)
+    embedding_target = PositionalEncoding(max_len, embedding_dim)(embedding_target)
+    encoder = Dropout(0.1)(embedding_source)
     for i in range(blocks):
         encoder = encoder_block(encoder, heads, embedding_dim)
-    decoder = Dropout(0.1)(embedding)
+    decoder = Dropout(0.1)(embedding_target)
     for i in range(blocks):
         decoder = decoder_block(encoder, decoder, heads, embedding_dim)
-    out = Dropout(0.1)(encoder)
+    out = Dropout(0.1)(decoder)
     if single_out:
         out = Lambda(lambda x: x[:, -1])(out)
         out = Dense(vocab_len, activation="softmax")(out)
     else:
         out = TimeDistributed(Dense(vocab_len, activation="softmax"))(out)
-    model = Model(inputs=inputs, outputs=out)
+    model = Model(inputs=[input_source, input_target], outputs=out)
     return model
