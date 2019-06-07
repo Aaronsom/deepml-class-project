@@ -6,6 +6,7 @@ from transformer_translator.data_generator import DataGenerator
 from transformer_translator.transformer import transformer, PositionalEncoding, Attention
 from transformer_translator.ted_data_preprocessor import get_data, get_encoding_info
 from transformer_translator.predictor import TranslationCallback
+from transformer_translator.noam_schedule import NoamSchedule
 import numpy as np
 import keras.backend as K
 import tensorflow as tf
@@ -49,7 +50,7 @@ if __name__ == "__main__":
                                            "Attention": Attention, "sparse_categorical_accuracy": masked_sparse_categorical_accuracy(mask_id)})
     else:
         model = transformer(200, vocab_len, embedding_dim=embedding_dim, blocks=6, heads=5, single_out=False, mask_id=mask_id)
-        model.compile(optimizer=optimizer.Adam(),
+        model.compile(optimizer=optimizer.Adam(beta_1=0.9, beta_2=0.98, epsilon=1e-9),
                   loss="sparse_categorical_crossentropy", metrics=[masked_sparse_categorical_accuracy(mask_id)])
 
     model.summary()
@@ -63,6 +64,7 @@ if __name__ == "__main__":
     callbacks = [ModelCheckpoint(os.path.join(path, "best-model.hdf5"), save_best_only=True),
                  ModelCheckpoint(os.path.join(path, "model.hdf5"), save_best_only=False),
                  CSVLogger(os.path.join(path, "log.csv"), append=True),
-                 TranslationCallback(languages, max_len=max_len)]
+                 TranslationCallback(languages, max_len=max_len),
+                 NoamSchedule(warmup_steps=4000, learning_rate=0.05)]
     model.fit_generator(
         training_generator, initial_epoch=start_epoch, epochs=epochs, callbacks=callbacks, validation_data=validation_generator, workers=1)
