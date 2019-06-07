@@ -9,6 +9,9 @@ from transformer_translator.predictor import TranslationCallback
 import numpy as np
 import keras.backend as K
 import tensorflow as tf
+import os
+from datetime import datetime
+
 
 def masked_sparse_categorical_accuracy(mask_id):
     def sparse_categorical_accuracy(y_true, y_pred):
@@ -33,14 +36,15 @@ if __name__ == "__main__":
     epochs = 300
     batch_size = 32
     embedding_dim = 300
-    load = True
+    load = False
+    path = None
     start_epoch = 0
 
     training, dev, test = get_data(languages, data_folder="data")
     vocab_len, mask_id = get_encoding_info(languages, data_folder="data")
 
     if load:
-        model = load_model("out/model.hdf5",
+        model = load_model(os.path.join(path, "model.hdf5"),
                            custom_objects={"PositionalEncoding": PositionalEncoding,
                                            "Attention": Attention, "sparse_categorical_accuracy": masked_sparse_categorical_accuracy(mask_id)})
     else:
@@ -50,11 +54,15 @@ if __name__ == "__main__":
 
     model.summary()
 
+    if not load:
+        path = os.path.join("out", datetime.now().strftime('%Y-%m-%d_%H-%M'))
+        os.makedirs(path, exist_ok=True)
+
     training_generator = DataGenerator(training, mask_id=mask_id, max_len=max_len, batch_size=batch_size)
     validation_generator = DataGenerator(dev, mask_id=mask_id, max_len=max_len, batch_size=batch_size)
-    callbacks = [ModelCheckpoint("out/best-model.hdf5", save_best_only=True),
-                 ModelCheckpoint("out/model.hdf5", save_best_only=False),
-                 CSVLogger("out/log.csv", append=True),
+    callbacks = [ModelCheckpoint(os.path.join(path, "best-model.hdf5"), save_best_only=True),
+                 ModelCheckpoint(os.path.join(path, "model.hdf5"), save_best_only=False),
+                 CSVLogger(os.path.join(path, "log.csv"), append=True),
                  TranslationCallback(languages, max_len=max_len)]
     model.fit_generator(
         training_generator, initial_epoch=start_epoch, epochs=epochs, callbacks=callbacks, validation_data=validation_generator, workers=1)
