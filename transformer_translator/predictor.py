@@ -34,7 +34,11 @@ class Predictor:
             translated = list(self.encoding.inverse_transform([output[1:-1]]))[0]
         print(translated)
 
-DEFAULT_SENTENCE_LANGUAGE_PAIRS_EN_DE = [("Hello , how are you ?", "de"), ("Danke , mir geht es gut .", "en")]
+DEFAULT_SENTENCE_LANGUAGE_PAIRS_EN_DE = [
+    ("We who are diplomats , we are trained to deal with conflicts between states and issues between states .", "de"),
+    ("Und wir wissen nicht , wie mit ihnen umzugehen ist .", "en"),
+    ("Those portraits make us rethink how we see each other .", "de"),
+    ("Er saß neben mir und ich blickte ihn an .", "en")]
 
 class TranslationCallback(Callback):
 
@@ -61,3 +65,5 @@ if __name__ == "__main__":
     sentence2 = "Danke , mir geht es gut ."
     predictor.predict(sentence1, "de")
     predictor.predict(sentence2, "en")
+    predictor.predict(sentence1, "de", sample=False)
+    predictor.predict(sentence2, "en", sample=False)
