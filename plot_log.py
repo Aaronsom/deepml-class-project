@@ -2,7 +2,7 @@ import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 
-def plot(file, accuracy="categorical_accuracy"):
+def plot(file, accuracy="sparse_categorical_accuracy"):
     log = pd.read_csv(file)
     train_loss = log["loss"]
     val_loss = log["val_loss"]

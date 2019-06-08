@@ -120,19 +120,20 @@ def positional_encoding(n, embedding_dim):
     position_enc[1:, 1::2] = np.cos(position_enc[1:, 1::2])  # dim 2i+1
     return position_enc
 
-def encoder_block(inputs, heads, embedding_dim, dropout):
+def encoder_block(inputs, heads, embedding_dim, hidden_dim, dropout):
     attention = Attention(64, embedding_dim, heads=heads, mask=False, self_attention=True)(inputs)
     attention = Dropout(dropout)(attention)
     attention = Add()([attention, inputs])
     out = TimeDistributed(BatchNormalization())(attention)
 
-    out = TimeDistributed(Dense(embedding_dim, activation="relu"))(out)
+    out = TimeDistributed(Dense(hidden_dim, activation="relu"))(out)
+    out = TimeDistributed(Dense(embedding_dim))(out)
     out = Dropout(dropout)(out)
     out = Add()([inputs, out])
     out = TimeDistributed(BatchNormalization())(out)
     return out
 
-def decoder_block(encoder_inputs, inputs, heads, embedding_dim, dropout):
+def decoder_block(encoder_inputs, inputs, heads, embedding_dim, hidden_dim, dropout):
     attention = Attention(64, embedding_dim, heads=heads, mask=True, self_attention=True)(inputs)
     attention = Dropout(dropout)(attention)
     attention = Add()([attention, inputs])
@@ -143,14 +144,15 @@ def decoder_block(encoder_inputs, inputs, heads, embedding_dim, dropout):
     attention = Add()([attention, out])
     out = TimeDistributed(BatchNormalization())(attention)
 
-    out = TimeDistributed(Dense(embedding_dim, activation="relu"))(out)
+    out = TimeDistributed(Dense(hidden_dim, activation="relu"))(out)
+    out = TimeDistributed(Dense(embedding_dim))(out)
     out = Dropout(dropout)(out)
     out = Add()([inputs, out])
     out = TimeDistributed(BatchNormalization())(out)
     return out
 
 def transformer(max_len, vocab_len, mask_id=None, embedding=None, single_out=True,
-                blocks=6, heads=8,  embedding_dim=300, dropout=0.1):
+                blocks=6, heads=8, embedding_dim=300, hidden_dim=1024, dropout=0.1):
     input_source = Input(shape=(None,))
     input_target = Input(shape=(None,))
     if mask_id is not None:
@@ -169,10 +171,10 @@ def transformer(max_len, vocab_len, mask_id=None, embedding=None, single_out=Tru
     embedding_target = PositionalEncoding(max_len, embedding_dim)(embedding_target)
     encoder = Dropout(dropout)(embedding_source)
     for i in range(blocks):
-        encoder = encoder_block(encoder, heads, embedding_dim, dropout)
+        encoder = encoder_block(encoder, heads, embedding_dim, hidden_dim, dropout)
     decoder = Dropout(dropout)(embedding_target)
     for i in range(blocks):
-        decoder = decoder_block(encoder, decoder, heads, embedding_dim, dropout)
+        decoder = decoder_block(encoder, decoder, heads, embedding_dim, hidden_dim, dropout)
     out = Dropout(dropout)(decoder)
     if single_out:
         out = Lambda(lambda x: x[:, -1])(out)

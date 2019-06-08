@@ -4,10 +4,10 @@ import math
 
 
 class NoamSchedule(Callback):
-    def __init__(self, warmup_steps=4000, learning_rate=0.2):
+    def __init__(self, warmup_steps=4000, learning_rate=0.2, start_steps=0):
         self.warmup_steps = warmup_steps
         self.lr = learning_rate
-        self.global_steps = 0
+        self.global_steps = start_steps
 
     def on_batch_begin(self, batch, logs=None):
         self.global_steps += 1
