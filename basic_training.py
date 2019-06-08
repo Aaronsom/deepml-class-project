@@ -49,7 +49,8 @@ if __name__ == "__main__":
                            custom_objects={"PositionalEncoding": PositionalEncoding,
                                            "Attention": Attention, "sparse_categorical_accuracy": masked_sparse_categorical_accuracy(mask_id)})
     else:
-        model = transformer(200, vocab_len, embedding_dim=embedding_dim, blocks=6, heads=5, single_out=False, mask_id=mask_id)
+        model = transformer(200, vocab_len, embedding_dim=embedding_dim,
+                            blocks=6, heads=5, dropout=0.3, single_out=False, mask_id=mask_id)
         model.compile(optimizer=optimizer.Adam(beta_1=0.9, beta_2=0.98, epsilon=1e-9),
                   loss="sparse_categorical_crossentropy", metrics=[masked_sparse_categorical_accuracy(mask_id)])
 
@@ -65,6 +66,6 @@ if __name__ == "__main__":
                  ModelCheckpoint(os.path.join(path, "model.hdf5"), save_best_only=False),
                  CSVLogger(os.path.join(path, "log.csv"), append=True),
                  TranslationCallback(languages, max_len=max_len),
-                 NoamSchedule(warmup_steps=4000, learning_rate=0.05)]
+                 NoamSchedule(warmup_steps=8000, learning_rate=0.2)]
     model.fit_generator(
         training_generator, initial_epoch=start_epoch, epochs=epochs, callbacks=callbacks, validation_data=validation_generator, workers=1)
