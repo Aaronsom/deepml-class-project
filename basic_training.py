@@ -61,7 +61,7 @@ if __name__ == "__main__":
         os.makedirs(path, exist_ok=True)
         json.dump(config, open(os.path.join(path, "config.json"), "w"), indent=4)
 
-        model = transformer(config["max_len"], config["vocab_len"], embedding_dim=config["embedding_dim"], hidden_dim=config["hidden_dim"],
+        model = transformer(200, config["vocab_len"], embedding_dim=config["embedding_dim"], hidden_dim=config["hidden_dim"],
                             blocks=config["blocks"], heads=config["heads"], dropout=config["dropout"], single_out=False, mask_id=config["mask_id"])
         model.compile(optimizer=optimizer.Adam(beta_1=config["adam_beta1"], beta_2=config["adam_beta2"], epsilon=1e-9),
                   loss="sparse_categorical_crossentropy", metrics=[masked_sparse_categorical_accuracy(config["mask_id"])])
