@@ -21,4 +21,4 @@ def plot(file, accuracy="sparse_categorical_accuracy"):
     plt.show()
 
 if __name__ == "__main__":
-    plot("out/log.csv")
+    plot("out/2019-06-08_17-36/log.csv")

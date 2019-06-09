@@ -12,6 +12,7 @@ import keras.backend as K
 import tensorflow as tf
 import os
 from datetime import datetime
+import json
 
 
 def masked_sparse_categorical_accuracy(mask_id):
@@ -23,54 +24,62 @@ def masked_sparse_categorical_accuracy(mask_id):
         masked_pred = tf.boolean_mask(y_pred, mask)
         accuracy = K.mean(K.cast(K.equal(masked_true, masked_pred), K.floatx()))
         return accuracy
-        #return K.cast(K.equal(K.max(y_true, axis=-1),
+        # return K.cast(K.equal(K.max(y_true, axis=-1),
         #                      K.cast(K.argmax(y_pred, axis=-1), K.floatx())),
         #              K.floatx())
     return sparse_categorical_accuracy
 
+
 if __name__ == "__main__":
-    #set_floatx("float16")
-    #set_epsilon(1e-04)
-
-    languages = ["en", "de"]
-    max_len = 64
-    epochs = 300
-    batch_size = 32
-    embedding_dim = 300
-    load = False
-    path = None
-    start_epoch = 0
-
-
-    training, dev, test = get_data(languages, data_folder="data")
-    #training = [training[0][:int(0.5*len(training[0]))], training[1][:int(0.5*len(training[0]))]] #train with 1 language direction
-    #dev = [dev[0][:int(0.5*len(dev[0]))], dev[1][:int(0.5*len(dev[0]))]]
-    vocab_len, mask_id = get_encoding_info(languages, data_folder="data")
-
-    start_steps = start_epoch * len(training[0])
+    # set_floatx("float16")
+    # set_epsilon(1e-04)
+    config = {
+        "languages": ["en", "de"],
+        "max_len": 64,
+        "batch_size": 32,
+        "blocks": 3,
+        "heads": 4,
+        "embedding_dim": 256,
+        "hidden_dim": 1024,
+        "dropout": 0.1,
+        "adam_beta1": 0.9,
+        "adam_beta2": 0.98,
+        "warmup_steps": 8000,
+        "learning_rate": 0.1,
+        "mask_id": None,  # set later
+        "vocab_len": None  # set later
+    }
 
     if load:
+        config = json.load(open(os.path.join(path, "config.json")))
         model = load_model(os.path.join(path, "model.hdf5"),
                            custom_objects={"PositionalEncoding": PositionalEncoding,
-                                           "Attention": Attention, "sparse_categorical_accuracy": masked_sparse_categorical_accuracy(mask_id)})
+                                           "Attention": Attention, "sparse_categorical_accuracy": masked_sparse_categorical_accuracy(config["mask_id"])})
     else:
-        model = transformer(200, vocab_len, embedding_dim=embedding_dim, hidden_dim=1024,
-                            blocks=6, heads=5, dropout=0.1, single_out=False, mask_id=mask_id)
-        model.compile(optimizer=optimizer.Adam(beta_1=0.9, beta_2=0.98, epsilon=1e-9),
-                  loss="sparse_categorical_crossentropy", metrics=[masked_sparse_categorical_accuracy(mask_id)])
+        config["vocab_len"], config["mask_id"] = get_encoding_info(config["languages"], data_folder="data")
+        path = os.path.join("out", datetime.now().strftime('%Y-%m-%d_%H-%M'))
+        os.makedirs(path, exist_ok=True)
+        json.dump(config, open(os.path.join(path, "config.json"), "w"), indent=4)
+
+        model = transformer(config["max_len"], config["vocab_len"], embedding_dim=config["embedding_dim"], hidden_dim=config["hidden_dim"],
+                            blocks=config["blocks"], heads=config["heads"], dropout=config["dropout"], single_out=False, mask_id=config["mask_id"])
+        model.compile(optimizer=optimizer.Adam(beta_1=config["adam_beta1"], beta_2=config["adam_beta2"], epsilon=1e-9),
+                  loss="sparse_categorical_crossentropy", metrics=[masked_sparse_categorical_accuracy(config["mask_id"])])
 
     model.summary()
 
-    if not load:
-        path = os.path.join("out", datetime.now().strftime('%Y-%m-%d_%H-%M'))
-        os.makedirs(path, exist_ok=True)
+    training, dev, test = get_data(config["languages"], data_folder="data")
+    # training = [training[0][:int(0.5*len(training[0]))], training[1][:int(0.5*len(training[0]))]] #train with 1 language direction
+    # dev = [dev[0][:int(0.5*len(dev[0]))], dev[1][:int(0.5*len(dev[0]))]]
 
-    training_generator = DataGenerator(training, mask_id=mask_id, max_len=max_len, batch_size=batch_size)
-    validation_generator = DataGenerator(dev, mask_id=mask_id, max_len=max_len, batch_size=batch_size)
+    start_steps = start_epoch * len(training[0])
+
+    training_generator = DataGenerator(training, mask_id=config["mask_id"], max_len=config["max_len"], batch_size=config["batch_size"])
+    validation_generator = DataGenerator(dev, mask_id=config["mask_id"], max_len=config["max_len"], batch_size=config["batch_size"])
     callbacks = [ModelCheckpoint(os.path.join(path, "best-model.hdf5"), save_best_only=True),
                  ModelCheckpoint(os.path.join(path, "model.hdf5"), save_best_only=False),
                  CSVLogger(os.path.join(path, "log.csv"), append=True),
-                 TranslationCallback(languages, max_len=max_len),
-                 NoamSchedule(warmup_steps=8000, learning_rate=0.1, start_steps=start_steps)]
+                 TranslationCallback(config["languages"], max_len=config["max_len"]),
+                 NoamSchedule(warmup_steps=config["warmup_steps"], learning_rate=config["learning_rate"], start_steps=start_steps)]
     model.fit_generator(
-        training_generator, initial_epoch=start_epoch, epochs=epochs, callbacks=callbacks, validation_data=validation_generator, workers=1)
+        training_generator, initial_epoch=start_epoch, epochs=300, callbacks=callbacks, validation_data=validation_generator, workers=1)
