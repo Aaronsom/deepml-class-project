@@ -49,6 +49,9 @@ if __name__ == "__main__":
         "mask_id": None,  # set later
         "vocab_len": None  # set later
     }
+    load = True
+    path = "out/2019-06-09_15-40"
+    start_epoch = 56
 
     if load:
         config = json.load(open(os.path.join(path, "config.json")))
