@@ -30,6 +30,8 @@ out/
 *.synctex.gz
 *.bcf
 *.run.xml
+*.fdb_latexmk
+*.fls
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
