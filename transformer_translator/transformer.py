@@ -162,11 +162,12 @@ def transformer(max_len, vocab_len, mask_id=None, embedding=None, single_out=Tru
         masked_in_source = input_source
         masked_in_target = input_target
     if embedding is None:
-        embedding_source = Embedding(input_dim=vocab_len, output_dim=embedding_dim)(masked_in_source)
-        embedding_target = Embedding(input_dim=vocab_len, output_dim=embedding_dim)(masked_in_target)
+        embedding = Embedding(input_dim=vocab_len, output_dim=embedding_dim)
     else:
-        embedding_source = Embedding(input_dim=vocab_len, output_dim=embedding_dim, weights=[embedding])(masked_in_source)
-        embedding_target = Embedding(input_dim=vocab_len, output_dim=embedding_dim, weights=[embedding])(masked_in_target)
+        embedding = Embedding(input_dim=vocab_len, output_dim=embedding_dim, weights=[embedding])
+    embedding_source = embedding(masked_in_source)
+    embedding_target = embedding(masked_in_target)
+
     embedding_source = PositionalEncoding(max_len, embedding_dim)(embedding_source)
     embedding_target = PositionalEncoding(max_len, embedding_dim)(embedding_target)
     encoder = Dropout(dropout)(embedding_source)
