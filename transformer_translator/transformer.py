@@ -126,7 +126,7 @@ def encoder_block(inputs, heads, embedding_dim, hidden_dim, dropout):
     attention = Add()([attention, inputs])
     out = TimeDistributed(BatchNormalization())(attention)
 
-    out = TimeDistributed(Dense(hidden_dim, activation="relu"))(out)
+    out = TimeDistributed(Dense(hidden_dim, activation="relu", kernel_initializer="he_uniform"))(out)
     out = TimeDistributed(Dense(embedding_dim))(out)
     out = Dropout(dropout)(out)
     out = Add()([inputs, out])
@@ -144,7 +144,7 @@ def decoder_block(encoder_inputs, inputs, heads, embedding_dim, hidden_dim, drop
     attention = Add()([attention, out])
     out = TimeDistributed(BatchNormalization())(attention)
 
-    out = TimeDistributed(Dense(hidden_dim, activation="relu"))(out)
+    out = TimeDistributed(Dense(hidden_dim, activation="relu", kernel_initializer="he_uniform"))(out)
     out = TimeDistributed(Dense(embedding_dim))(out)
     out = Dropout(dropout)(out)
     out = Add()([inputs, out])
