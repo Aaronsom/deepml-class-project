@@ -148,20 +148,31 @@ class Predictor:
         print(translated)
         print(f"Normalized log likelihood {norm_loglike}")
 
-DEFAULT_SENTENCE_LANGUAGE_PAIRS_EN_DE = [
-    ("We who are diplomats , we are trained to deal with conflicts between states and issues between states .", "de"),
-    ("Und wir wissen nicht , wie mit ihnen umzugehen ist .", "en"),
-    ("Those portraits make us rethink how we see each other .", "de"),
-    ("Er saß neben mir und ich blickte ihn an .", "en")]
+sentence_pairs = {"en_de": [
+        ("We who are diplomats , we are trained to deal with conflicts between states and issues between states .", "de"),
+        ("Und wir wissen nicht , wie mit ihnen umzugehen ist .", "en"),
+        ("Those portraits make us rethink how we see each other .", "de"),
+        ("Er saß neben mir und ich blickte ihn an .", "en")],
+    "en_de_es": [
+        ("We who are diplomats , we are trained to deal with conflicts between states and issues between states .", "de"),
+        ("Und wir wissen nicht , wie mit ihnen umzugehen ist .", "en"),
+        ("Those portraits make us rethink how we see each other .", "de"),
+        ("Er saß neben mir und ich blickte ihn an .", "en"),
+        ("There was a big smile on his face which was unusual then , because the news mostly depressed him .", "es"),
+        ("Er sah sehr glücklich aus , was damals ziemlich ungewöhnlich war , da ihn die Nachrichten meistens deprimierten .", "es"),
+        ("A finales de este año habrá alrededor de mil millones de personas en el planeta que usarán activamente las redes sociales .", "de"),
+        ("A finales de este año habrá alrededor de mil millones de personas en el planeta que usarán activamente las redes sociales .", "en")]
+}
 
 
 class TranslationCallback(Callback):
-    def __init__(self, languages, data_folder="data", max_len=50, sentence_language_pairs=DEFAULT_SENTENCE_LANGUAGE_PAIRS_EN_DE):
+    def __init__(self, languages, data_folder="data", max_len=50):
         super(TranslationCallback, self).__init__()
         self.max_len = max_len
         self.languages = languages
         self.data_folder = data_folder
-        self.sentences = sentence_language_pairs
+        lans = "_".join(languages)
+        self.sentences = sentence_pairs[lans]
         self.predictor = None
 
     def on_epoch_end(self, epoch, logs=None):
@@ -175,5 +186,5 @@ if __name__ == "__main__":
     model = load_model("../out/2019-06-09_15-40/best-model.hdf5",
                        custom_objects={"PositionalEncoding": PositionalEncoding, "Attention": Attention})
     predictor = Predictor(model, ["en", "de"], "../data")
-    for pair in DEFAULT_SENTENCE_LANGUAGE_PAIRS_EN_DE:
+    for pair in sentence_pairs["en_de"]:
         predictor.predict(pair[0], pair[1], max_length=50, mode="beam", attempts_beam=12)

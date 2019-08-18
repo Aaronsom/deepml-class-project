@@ -9,8 +9,9 @@ class NoamSchedule(Callback):
         self.lr = learning_rate
         self.global_steps = start_steps
 
-    def on_batch_begin(self, batch, logs=None):
+    def on_batch_begin(self, batch, logs=None, debug=False):
         self.global_steps += 1
         new_lr = self.lr * min(math.pow(self.global_steps, -0.5), self.global_steps*math.pow(self.warmup_steps, -1.5))
-        print(" lr "+str(new_lr))
+        if debug:
+            print(" lr "+str(new_lr))
         K.set_value(self.model.optimizer.lr, new_lr)
