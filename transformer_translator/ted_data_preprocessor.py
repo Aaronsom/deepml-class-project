@@ -81,6 +81,7 @@ def get_encoder(languages, data_folder=DATA_FOLDER):
     return encoding
 
 if __name__ == "__main__":
-    #ted_preprocessing(["en", "de"])
-    #fit_bpe(["en", "de"])
-    create_data(["en", "de"])
+    lans = ["en", "de", "es"]
+    ted_preprocessing(lans)
+    fit_bpe(lans)
+    create_data(lans)

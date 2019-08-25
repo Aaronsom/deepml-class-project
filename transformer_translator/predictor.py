@@ -6,7 +6,7 @@ from keras.callbacks import Callback
 
 
 class Beam:
-    def __init__(self, max_length, eos, output, ll=0, nll=0, length=1):
+    def __init__(self, max_length, eos, output, ll=0, nll=0, length=1, normalize_length=True):
         self.output = output
         self.loglikelihood = ll
         self.normalized_loglikelihood = nll
@@ -14,17 +14,21 @@ class Beam:
         self.eos = eos
         self.max_length = max_length
         self.done = False
+        self.normalize_length = normalize_length
 
     def update(self, idx, probability):
         self.output = np.append(self.output, idx)
         self.loglikelihood += np.log(probability)
         self.length += 1
-        self.normalized_loglikelihood = self.loglikelihood/self.length
+        if self.normalize_length:
+            self.normalized_loglikelihood = self.loglikelihood/self.length
+        else:
+            self.normalized_loglikelihood = self.loglikelihood
         if self.length == self.max_length or idx == self.eos:
             self.done = True
 
     def clone(self):
-        return Beam(self.max_length, self.eos, self.output, self.loglikelihood, self.normalized_loglikelihood, self.length)
+        return Beam(self.max_length, self.eos, self.output, self.loglikelihood, self.normalized_loglikelihood, self.length, self.normalize_length)
 
     def extend(self, idxs, probs):
         beams = []
@@ -42,13 +46,13 @@ class Predictor:
         self.sos_idx = list(self.encoding.transform([SOS_TOKEN]))[0][0]
         self.eos_idx = list(self.encoding.transform([EOS_TOKEN]))[0][0]
 
-    def predict(self, sentence, target_language, max_length=50, mode="greedy", attempts_beam=1):
+    def predict(self, sentence, target_language, max_length=50, mode="greedy", attempts_beam=1, normalize_length=True):
         if mode is "greedy":
             self.greedy(sentence, target_language, max_length)
         elif mode is "sample":
             self.sample(sentence, target_language, max_length, attempts_beam)
         elif mode is "beam":
-            self.beam(sentence, target_language, max_length, attempts_beam)
+            self.beam(sentence, target_language, max_length, attempts_beam, normalize_length)
 
     def greedy(self, sentence, target_language, max_length=50):
         source = list(self.encoding.transform([f"{language_token(target_language)} "+sentence]))
@@ -121,11 +125,11 @@ class Predictor:
             idxs = np.argpartition(values, -beam_size)[-beam_size:]
         return [beams[idx] for idx in idxs]
 
-    def beam(self, sentence, target_language, max_length=50, beam_size=12):
+    def beam(self, sentence, target_language, max_length=50, beam_size=12, normalize_length=True):
         source = np.array(list(self.encoding.transform([f"{language_token(target_language)} "+sentence])))
-        print(f"Source: {list(self.encoding.inverse_transform(source))}")
+        print(f"Source:\n{list(self.encoding.inverse_transform(source))}\n")
         first_output = np.array([self.sos_idx])
-        beams = [Beam(max_length, self.eos_idx, first_output)]
+        beams = [Beam(max_length, self.eos_idx, first_output, normalize_length=normalize_length)]
 
         while not all([beam.done for beam in beams]):
             outputs = np.stack([beam.output for beam in beams if not beam.done])
@@ -146,7 +150,7 @@ class Predictor:
             translated = list(self.encoding.inverse_transform([output[1:-1]]))[0]
 
         print(translated)
-        print(f"Normalized log likelihood {norm_loglike}")
+        print(f"\nNormalized log likelihood {norm_loglike}\n")
 
 sentence_pairs = {"en_de": [
         ("We who are diplomats , we are trained to deal with conflicts between states and issues between states .", "de"),
@@ -183,8 +187,8 @@ class TranslationCallback(Callback):
 
 
 if __name__ == "__main__":
-    model = load_model("../out/2019-06-09_15-40/best-model.hdf5",
+    model = load_model("../out/2019-08-18_16-37/best-model.hdf5",
                        custom_objects={"PositionalEncoding": PositionalEncoding, "Attention": Attention})
-    predictor = Predictor(model, ["en", "de"], "../data")
-    for pair in sentence_pairs["en_de"]:
-        predictor.predict(pair[0], pair[1], max_length=50, mode="beam", attempts_beam=12)
+    predictor = Predictor(model, ["en", "de", "es"], "../data")
+    for pair in sentence_pairs["en_de_es"]:
+        predictor.predict(pair[0], pair[1], max_length=50, mode="beam", attempts_beam=12, normalize_length=True)
