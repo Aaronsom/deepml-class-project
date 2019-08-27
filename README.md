@@ -9,4 +9,4 @@ Download the dataset from https://github.com/neulab/word-embeddings-for-nmt and 
 
 You then can use and adapt basic_training.py to train your model.
 
-Finally, use preditor.py to translate new sentences. Note that there is no tokenizer, so you need to manually tekenize the input at the moment.
+Finally, use preditor.py to translate new sentences. Note that there is no tokenizer, so you need to manually tokenize the input at the moment.
